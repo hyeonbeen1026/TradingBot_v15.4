@@ -1,0 +1,40 @@
+name: Daily Quant Bot
+
+on:
+  schedule:
+    # 매주 월~금, UTC 13:00 (한국 시간 밤 10시 정각)에 실행
+    - cron: '0 13 * * 1-5'
+  workflow_dispatch: # 내가 원할 때 수동으로 버튼을 눌러 실행할 수 있게 해주는 옵션
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11' # 로컬과 비슷한 파이썬 환경 세팅
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Quant Engine & Send Orders
+        env:
+          # GitHub Secrets에서 키를 꺼내와 파이썬의 os.getenv()로 전달
+          ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}      
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}  
+        run: python final_live_engine.py
+
+      - name: Upload Chart Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-performance-chart
+          path: v15_4_live_final.png
